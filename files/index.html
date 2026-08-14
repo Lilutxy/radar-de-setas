@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Radar de Setas · Norte de España</title>
+
+<!-- PWA: hace que se pueda instalar en el móvil con icono propio -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#201d17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Radar Setas">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #201d17;
+    --bg-soft: #29251d;
+    --paper: #f3ecdd;
+    --paper-2: #e7dec8;
+    --ink: #26211a;
+    --ink-soft: #6b6152;
+    --moss: #71805a;
+    --moss-deep: #4e5a3d;
+    --ocre: #b98a44;
+    --niscalo: #bd5f2b;
+    --mist: #9aa08f;
+    --line: rgba(38,33,26,0.14);
+    --line-dark: rgba(243,236,221,0.12);
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 20% -10%, #2c2820 0%, var(--bg) 55%);
+    color: var(--paper);
+    font-family: 'Work Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 4rem;
+  }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ---------- Header ---------- */
+  header{ padding: 3.2rem 0 1.8rem; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ocre);
+    display:flex; align-items:center; gap:0.6rem;
+  }
+  .eyebrow::before{
+    content:"";
+    width: 6px; height:6px; border-radius:50%;
+    background: var(--niscalo);
+    display:inline-block;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    line-height: 1.05;
+    margin: 0.5rem 0 0.7rem;
+    letter-spacing: -0.01em;
+  }
+  header p.sub{
+    max-width: 46ch;
+    color: var(--mist);
+    font-size: 0.98rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ---------- Zone selector ---------- */
+  .zones{
+    display:flex; flex-wrap:wrap; gap: 0.55rem;
+    margin: 2rem 0 0.4rem;
+  }
+  .zone-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-dark);
+    background: transparent;
+    color: var(--mist);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .zone-chip:hover{ border-color: var(--ocre); color: var(--paper); }
+  .zone-chip.active{
+    background: var(--moss);
+    border-color: var(--moss);
+    color: #fff;
+  }
+
+  .spots{
+    display:flex; flex-wrap:wrap; gap: 0.45rem;
+    margin: 0.9rem 0 0.3rem;
+    padding-left: 0.1rem;
+  }
+  .spot-chip{
+    font-family:'Work Sans', sans-serif;
+    font-size: 0.82rem;
+    padding: 0.38rem 0.75rem;
+    border-radius: 8px;
+    border: 1px dashed var(--line-dark);
+    background: transparent;
+    color: var(--mist);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .spot-chip:hover{ border-color: var(--niscalo); color: var(--paper); }
+  .spot-chip.active{
+    background: var(--niscalo);
+    border-color: var(--niscalo);
+    border-style: solid;
+    color: #fff;
+  }
+  .spot-note{
+    font-size: 0.82rem;
+    color: var(--mist);
+    margin: 0.3rem 0 0;
+    line-height: 1.4;
+    max-width: 60ch;
+  }
+
+  .statusbar{
+    display:flex; align-items:center; justify-content: space-between;
+    flex-wrap: wrap; gap: 0.6rem;
+    margin: 1.6rem 0 0.4rem;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line-dark);
+    border-bottom: 1px solid var(--line-dark);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--mist);
+  }
+  .statusbar button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    background: none;
+    border: 1px solid var(--line-dark);
+    color: var(--paper);
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .statusbar button:hover{ border-color: var(--ocre); color: var(--ocre); }
+
+  /* ---------- Grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1.6rem;
+  }
+
+  .card{
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 1.3rem 1.3rem 1.2rem;
+    display:flex; gap: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .card.dormant{ opacity: 0.55; }
+  .card.dormant .gauge-fill{ fill: var(--mist) !important; }
+
+  .gauge{ flex: 0 0 64px; }
+  .gauge svg{ width: 64px; height: 84px; display:block; }
+  .gauge-fill{ transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+
+  .card-body{ flex: 1; min-width: 0; }
+  .card-top{ display:flex; justify-content: space-between; align-items:flex-start; gap: 0.5rem; }
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.18rem;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .card-latin{
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    margin: 0.15rem 0 0;
+  }
+  .pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pill.alta{ background: var(--moss); color:#fff; }
+  .pill.media{ background: var(--ocre); color:#2a2318; }
+  .pill.baja{ background: var(--mist); color:#2a2318; }
+  .pill.fuera{ background: transparent; border:1px solid var(--ink-soft); color: var(--ink-soft); }
+
+  .habitat{ font-size: 0.83rem; color: var(--ink-soft); margin: 0.5rem 0 0.65rem; line-height:1.4; }
+
+  .stats{
+    display:flex; flex-wrap: wrap; gap: 0.9rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 0.6rem;
+    margin-bottom: 0.55rem;
+  }
+  .stats b{ color: var(--ink); font-weight:600; }
+
+  .verdict{ font-size: 0.87rem; line-height: 1.45; }
+
+  .loading, .error{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--mist);
+    padding: 2.5rem 0;
+    text-align: center;
+  }
+  .error{ color: var(--niscalo); }
+
+  /* ---------- Legend / footer ---------- */
+  .legend{
+    margin-top: 2.6rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line-dark);
+  }
+  .legend h2{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin: 0 0 0.8rem;
+  }
+  .legend-keys{
+    display:flex; flex-wrap:wrap; gap: 1.1rem;
+    font-size: 0.82rem; color: var(--mist);
+    margin-bottom: 1.1rem;
+  }
+  .legend-keys span{ display:flex; align-items:center; gap:0.4rem; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot.alta{ background: var(--moss); }
+  .dot.media{ background: var(--ocre); }
+  .dot.baja{ background: var(--mist); }
+
+  .note{
+    background: var(--bg-soft);
+    border: 1px solid var(--line-dark);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.83rem;
+    color: var(--mist);
+    line-height: 1.55;
+  }
+  .note b{ color: var(--paper); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Cuaderno de campo · Norte de España</div>
+    <h1>Radar de Setas</h1>
+    <p class="sub">Cruza el clima real de cada zona con lo que necesita cada especie para fructificar, y estima cuándo merece la pena calzarse las botas.</p>
+  </header>
+
+  <nav class="zones" id="zones"></nav>
+  <nav class="spots" id="spots"></nav>
+  <p class="spot-note" id="spotNote"></p>
+
+  <div class="statusbar">
+    <span id="statusText">Cargando clima…</span>
+    <span style="display:flex; gap:0.5rem;">
+      <button id="installBtn" hidden>⬇ Instalar app</button>
+      <button id="refreshBtn">↻ Actualizar</button>
+    </span>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="loading">Consultando el tiempo de la zona…</div>
+  </div>
+
+  <div class="legend">
+    <h2>Cómo leer el semáforo</h2>
+    <div class="legend-keys">
+      <span><i class="dot alta"></i> Alta probabilidad — lluvia suficiente, dentro de la ventana de días y temperatura en rango</span>
+      <span><i class="dot media"></i> Probabilidad media — falta algún factor (poca lluvia, aún pronto, temperatura al límite)</span>
+      <span><i class="dot baja"></i> Baja / fuera de ventana — toca esperar a un nuevo frente</span>
+    </div>
+    <div class="note">
+      <b>Nota honesta:</b> los umbrales de lluvia, temperatura y "días desde la lluvia" están sacados de guías micológicas generales, no de un modelo científico exacto — cada pinar y cada ladera tiene su microclima. Úsalo como aviso de "va tocando mirar", no como garantía. Y recuerda la regla de oro: si no estás 100% seguro de una especie, no la comas. En Araba el límite es de 2 kg por persona y en Gipuzkoa de 4 kg; Soria y Burgos (Pinares) exigen permiso de recolección — conviene comprobarlo antes de salir.
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------- Datos de provincias y puntos concretos ----------------
+const PROVINCES = [
+  { id:'bizkaia', name:'Bizkaia', spots:[
+    { id:'gorbeia-bi', name:'Gorbeia (vert. vizcaína)', lat:43.05, lon:-2.87, note:'Pinares y hayedos de Zeanuri-Areatza; boletus y lengua de vaca.' },
+    { id:'urkiola',    name:'Urkiola',                  lat:43.08, lon:-2.55, note:'Hayas y pinos; boletus pinícola, barbudas y carboneras.' },
+    { id:'altube-bi',  name:'Altube',                   lat:43.00, lon:-2.92, note:'Uno de los mayores hayedos de Europa; galanpernas y pie azul.' },
+  ]},
+  { id:'gipuzkoa', name:'Gipuzkoa', spots:[
+    { id:'aiako-harria', name:'Aiako Harria',    lat:43.27, lon:-1.85, note:'Robledales y pinares junto a la frontera; boletus, pinícola y hongo negro.' },
+    { id:'aizkorri',     name:'Aizkorri-Aratz',  lat:42.97, lon:-2.28, note:'Hayedos altos de Zegama-Segura; salen primero los de cota alta.' },
+    { id:'hernio',       name:'Hernio-Gazteluz', lat:43.13, lon:-2.13, note:'Hayedos de Tolosaldea, buen terreno para rebozuelo y trompeta.' },
+  ]},
+  { id:'araba', name:'Araba', spots:[
+    { id:'gorbeia-ar', name:'Gorbeia (vert. alavesa)', lat:42.95, lon:-2.83, note:'Pinares y hayedos compartidos con Bizkaia.' },
+    { id:'izki',       name:'Izki',                    lat:42.75, lon:-2.38, note:'El mayor robledal de melojo de Europa; clima de transición, bueno para oronja.' },
+    { id:'entzia',     name:'Entzia-Iturrieta',        lat:42.87, lon:-2.35, note:'Sierra caliza con hayedos y pastos de altura; perretxiko en primavera.' },
+  ]},
+  { id:'cantabria', name:'Cantabria', spots:[
+    { id:'saja',    name:'Valle del Saja (Selores)', lat:43.13, lon:-4.30, note:'Bosques mixtos del Saja-Besaya; ruta micológica clásica en otoño.' },
+    { id:'hijedo',  name:'Monte Hijedo',             lat:42.98, lon:-4.05, note:'Uno de los hayedos-robledales mejor conservados de Cantabria.' },
+    { id:'campoo',  name:'Alto Campoo',              lat:43.05, lon:-4.15, note:'Zona de montaña hacia Palencia; buen frío para especies tardías.' },
+  ]},
+  { id:'palencia', name:'N. Palencia', spots:[
+    { id:'cervera',  name:'Cervera de Pisuerga', lat:42.87, lon:-4.51, note:'Corazón de Fuentes Carrionas; hayedos y robledales.' },
+    { id:'velilla',  name:'Velilla del Río Carrión', lat:42.81, lon:-4.63, note:'Rebollar con oronja, rebozuelo y lactarius documentados.' },
+    { id:'aguilar',  name:'Aguilar de Campoo',   lat:42.79, lon:-4.28, note:'Zona caliza de Covalagua, praderas y bordes de bosque.' },
+  ]},
+  { id:'burgos', name:'Burgos', spots:[
+    { id:'demanda', name:'Sierra de la Demanda (Neila)', lat:42.05, lon:-3.10, note:'Hongo, níscalo y oronja; jornadas micológicas en Salas de los Infantes.' },
+    { id:'pinares-bu', name:'Comarca de Pinares (Hontoria)', lat:41.90, lon:-3.15, note:'Acceso al Cañón de Río Lobos; pinares productores.' },
+    { id:'merindades', name:'Las Merindades (Valle de Mena)', lat:43.10, lon:-3.30, note:'Norte de Burgos, clima más atlántico; perretxiko y rebozuelo.' },
+  ]},
+  { id:'soria', name:'Soria', spots:[
+    { id:'urbion',   name:'Pinar Grande - Urbión', lat:41.87, lon:-2.85, note:'El gran productor de boletus ("Migueles") de Castilla y León.' },
+    { id:'rio-lobos',name:'Cañón de Río Lobos',    lat:41.80, lon:-3.15, note:'Sabinares y pinares entre Soria y Burgos.' },
+    { id:'llanos',   name:'Pinares Llanos',        lat:41.83, lon:-3.00, note:'Pinar mediterráneo (Pinus pinaster), el mejor para níscalo.' },
+  ]},
+];
+
+// ---------------- Datos de especies ----------------
+// seasonMonths: [inicio, fin] en número de mes (1-12)
+// rainThreshold: mm acumulados necesarios en lookbackDays para considerar "lluvia suficiente"
+// lagMin/lagMax: días desde la última lluvia fuerte en los que suele salir la seta
+const ALL_ZONES = ['bizkaia','gipuzkoa','araba','cantabria','palencia','burgos','soria'];
+
+const SPECIES = [
+  {
+    id:'boletus', name:'Boletus edulis', latin:'Boletus edulis', local:'hongo, miguel',
+    habitat:'Hayedos y pinares de media-alta montaña, suelo fresco.',
+    seasonMonths:[9,11], tempMin:7, tempMax:25, rainThreshold:40, lookbackDays:20,
+    lagMin:10, lagMax:21, windSensitive:true, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'niscalo', name:'Níscalo', latin:'Lactarius deliciosus', local:'robellón, gibelurdin',
+    habitat:'Pinares (Pinus sylvestris / pinaster), suelos ácidos bien drenados.',
+    seasonMonths:[8,12], tempMin:5, tempMax:22, rainThreshold:35, lookbackDays:20,
+    lagMin:12, lagMax:24, windSensitive:false, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'perretxiko', name:'Perretxiko', latin:'Calocybe gambosa', local:'seta de San Jorge',
+    habitat:'Prados y pastizales calizos, bordes de bosque.',
+    seasonMonths:[3,6], tempMin:8, tempMax:20, rainThreshold:25, lookbackDays:15,
+    lagMin:7, lagMax:15, windSensitive:false, frostSensitive:true, zones: ALL_ZONES,
+  },
+  {
+    id:'rebozuelo', name:'Rebozuelo', latin:'Cantharellus cibarius', local:'ziza hori',
+    habitat:'Hayedos y robledales húmedos, hojarasca.',
+    seasonMonths:[6,11], tempMin:10, tempMax:24, rainThreshold:30, lookbackDays:15,
+    lagMin:8, lagMax:18, windSensitive:false, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'trompeta', name:'Trompeta de los muertos', latin:'Craterellus cornucopioides', local:'trompeta negra',
+    habitat:'Hojarasca de hayedos y castañares.',
+    seasonMonths:[8,11], tempMin:6, tempMax:20, rainThreshold:35, lookbackDays:20,
+    lagMin:12, lagMax:25, windSensitive:true, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'marzuelo', name:'Marzuelo', latin:'Hygrophorus marzuolus', local:'marzuolo',
+    habitat:'Pinares y abetales de montaña, ligado al deshielo.',
+    seasonMonths:[2,4], tempMin:-1, tempMax:12, rainThreshold:20, lookbackDays:15,
+    lagMin:5, lagMax:15, windSensitive:false, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'oronja', name:'Oronja', latin:'Amanita caesarea', local:'huevo de rey',
+    habitat:'Encinares, robledales y castañares térmicos, suelo suelto. Especie termófila, poco habitual en la vertiente atlántica más húmeda.',
+    seasonMonths:[7,10], tempMin:15, tempMax:32, rainThreshold:25, lookbackDays:12,
+    lagMin:5, lagMax:12, windSensitive:false, frostSensitive:false,
+    zones: ['araba','burgos','soria','cantabria','palencia'],
+  },
+  {
+    id:'senderuela', name:'Senderuela', latin:'Marasmius oreades', local:'seta de carrerilla',
+    habitat:'Prados, pastizales y bordes de camino, formando "corros de brujas".',
+    seasonMonths:[4,11], tempMin:8, tempMax:27, rainThreshold:15, lookbackDays:8,
+    lagMin:4, lagMax:10, windSensitive:false, frostSensitive:false, zones: ALL_ZONES,
+  },
+  {
+    id:'colmenilla', name:'Colmenilla', latin:'Morchella spp.', local:'morilla',
+    habitat:'Riberas y bosques de caducifolias alteradas (chopos, fresnos, avellanos), suelo removido.',
+    seasonMonths:[3,5], tempMin:7, tempMax:18, rainThreshold:20, lookbackDays:12,
+    lagMin:6, lagMax:14, windSensitive:false, frostSensitive:true, zones: ALL_ZONES,
+  },
+  {
+    id:'parasol', name:'Parasol', latin:'Macrolepiota procera', local:'galanperna',
+    habitat:'Praderas, claros de bosque y bordes de camino, suelo bien drenado.',
+    seasonMonths:[7,11], tempMin:10, tempMax:26, rainThreshold:30, lookbackDays:15,
+    lagMin:8, lagMax:18, windSensitive:false, frostSensitive:false, zones: ALL_ZONES,
+  },
+];
+
+let currentProvince = PROVINCES[0];
+let currentSpot = currentProvince.spots[0];
+
+// ---------------- Utilidades de fecha ----------------
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function inSeason(range, month){
+  const [a,b] = range;
+  return a <= b ? (month>=a && month<=b) : (month>=a || month<=b);
+}
+function monthName(n){
+  return ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][n];
+}
+
+// ---------------- Llamada al clima ----------------
+async function fetchWeather(spot){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}` +
+    `&daily=precipitation_sum,temperature_2m_mean,temperature_2m_min,windspeed_10m_max` +
+    `&past_days=21&forecast_days=1&timezone=Europe%2FMadrid`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('No se pudo obtener el clima');
+  const json = await res.json();
+  const d = json.daily;
+  return {
+    dates: d.time,
+    precip: d.precipitation_sum.map(v => v ?? 0),
+    tempMean: d.temperature_2m_mean,
+    tempMin: d.temperature_2m_min,
+    wind: d.windspeed_10m_max,
+  };
+}
+
+function todayIndex(data){
+  const today = isoDate(new Date());
+  let idx = data.dates.indexOf(today);
+  if(idx === -1) idx = data.dates.length - 1; // fallback: usa el último día disponible
+  return idx;
+}
+
+function sumLastN(arr, endIdx, n){
+  let s=0;
+  for(let i=Math.max(0,endIdx-n+1); i<=endIdx; i++) s += (arr[i] ?? 0);
+  return s;
+}
+function avgLastN(arr, endIdx, n){
+  let vals=[];
+  for(let i=Math.max(0,endIdx-n+1); i<=endIdx; i++) if(arr[i]!=null) vals.push(arr[i]);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function minLastN(arr, endIdx, n){
+  let vals=[];
+  for(let i=Math.max(0,endIdx-n+1); i<=endIdx; i++) if(arr[i]!=null) vals.push(arr[i]);
+  return vals.length ? Math.min(...vals) : null;
+}
+function maxLastN(arr, endIdx, n){
+  let vals=[];
+  for(let i=Math.max(0,endIdx-n+1); i<=endIdx; i++) if(arr[i]!=null) vals.push(arr[i]);
+  return vals.length ? Math.max(...vals) : null;
+}
+function daysSinceBigRain(data, endIdx, threshold, lookback){
+  for(let i=endIdx; i>=Math.max(0,endIdx-lookback); i--){
+    if((data.precip[i] ?? 0) >= threshold) return endIdx - i;
+  }
+  return null;
+}
+
+// ---------------- Puntuación por especie ----------------
+function scoreSpecies(sp, data, endIdx){
+  const month = new Date().getMonth()+1;
+  if(!inSeason(sp.seasonMonths, month)){
+    return {
+      score:0, band:'fuera',
+      label:'Fuera de temporada',
+      verdict:`Su temporada va de ${monthName(sp.seasonMonths[0])} a ${monthName(sp.seasonMonths[1])}.`,
+      accumRain:null, avgTemp:null, daysSince:null,
+    };
+  }
+
+  const accumRain = sumLastN(data.precip, endIdx, sp.lookbackDays);
+  const rainRatio = Math.min(accumRain / sp.rainThreshold, 1);
+  const rainScore = rainRatio * 35;
+
+  const daysSince = daysSinceBigRain(data, endIdx, 5, 21);
+  let lagScore = 0, lagMsg;
+  if(daysSince === null){
+    lagMsg = 'No hay lluvias significativas registradas en las últimas 3 semanas.';
+  } else if(daysSince < sp.lagMin){
+    lagScore = 15 * (daysSince / sp.lagMin);
+    lagMsg = `Aún en camino: suele tardar ${sp.lagMin}-${sp.lagMax} días tras una lluvia fuerte, van ${daysSince}.`;
+  } else if(daysSince <= sp.lagMax){
+    lagScore = 35;
+    lagMsg = `Dentro de la ventana de brote (${sp.lagMin}-${sp.lagMax} días tras la lluvia).`;
+  } else {
+    lagScore = Math.max(35 - (daysSince - sp.lagMax) * 2, 0);
+    lagMsg = `La ventana de esta lluvia ya pasó (hace ${daysSince} días); toca esperar un nuevo frente.`;
+  }
+
+  const avgTemp = avgLastN(data.tempMean, endIdx, 10);
+  let tempScore = 0;
+  if(avgTemp != null){
+    if(avgTemp >= sp.tempMin && avgTemp <= sp.tempMax) tempScore = 20;
+    else{
+      const dist = avgTemp < sp.tempMin ? sp.tempMin - avgTemp : avgTemp - sp.tempMax;
+      tempScore = Math.max(20 - dist*4, 0);
+    }
+  }
+
+  let windPenalty = 0;
+  if(sp.windSensitive){
+    const w = maxLastN(data.wind, endIdx, 3);
+    if(w != null){ if(w > 40) windPenalty = 10; else if(w > 25) windPenalty = 5; }
+  }
+  let frostPenalty = 0;
+  if(sp.frostSensitive){
+    const mt = minLastN(data.tempMin, endIdx, 5);
+    if(mt != null && mt < 0) frostPenalty = 25;
+  }
+
+  let total = Math.round(rainScore + lagScore + tempScore - windPenalty - frostPenalty);
+  total = Math.max(0, Math.min(100, total));
+
+  let band, label;
+  if(total >= 70){ band='alta'; label='Alta probabilidad'; }
+  else if(total >= 40){ band='media'; label='Probabilidad media'; }
+  else { band='baja'; label='Baja / fuera de ventana'; }
+
+  return { score: total, band, label, verdict: lagMsg, accumRain, avgTemp, daysSince };
+}
+
+// ---------------- Render ----------------
+function mushroomGauge(pct, band){
+  const colors = { alta:'var(--moss)', media:'var(--ocre)', baja:'var(--mist)', fuera:'var(--mist)' };
+  const fillColor = colors[band] || 'var(--mist)';
+  const clipId = 'clip-' + Math.random().toString(36).slice(2,9);
+  const riseY = 84 - (84 * (pct/100));
+  return `
+  <svg viewBox="0 0 64 84" fill="none">
+    <defs>
+      <clipPath id="${clipId}">
+        <path d="M32 4c14 0 24 10 24 20 0 6-4 9-10 9H18c-6 0-10-3-10-9C8 14 18 4 32 4z" />
+        <rect x="26" y="30" width="12" height="40" rx="3" />
+      </clipPath>
+    </defs>
+    <g clip-path="url(#${clipId})">
+      <rect x="0" y="0" width="64" height="84" fill="#eee7d6" />
+      <rect class="gauge-fill" x="0" y="${riseY}" width="64" height="84" fill="${fillColor}" />
+    </g>
+    <path d="M32 4c14 0 24 10 24 20 0 6-4 9-10 9H18c-6 0-10-3-10-9C8 14 18 4 32 4z" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1.4"/>
+    <rect x="26" y="30" width="12" height="40" rx="3" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1.4"/>
+  </svg>`;
+}
+
+function renderProvinces(){
+  const nav = document.getElementById('zones');
+  nav.innerHTML = PROVINCES.map(p =>
+    `<button class="zone-chip ${p.id===currentProvince.id?'active':''}" data-id="${p.id}">${p.name}</button>`
+  ).join('');
+  nav.querySelectorAll('.zone-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      currentProvince = PROVINCES.find(p=>p.id===btn.dataset.id);
+      currentSpot = currentProvince.spots[0];
+      renderProvinces();
+      renderSpots();
+      loadAndRender();
+    });
+  });
+}
+
+function renderSpots(){
+  const nav = document.getElementById('spots');
+  nav.innerHTML = currentProvince.spots.map(s =>
+    `<button class="spot-chip ${s.id===currentSpot.id?'active':''}" data-id="${s.id}">${s.name}</button>`
+  ).join('');
+  nav.querySelectorAll('.spot-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      currentSpot = currentProvince.spots.find(s=>s.id===btn.dataset.id);
+      renderSpots();
+      loadAndRender();
+    });
+  });
+  document.getElementById('spotNote').textContent = currentSpot.note;
+}
+
+function renderCards(data){
+  const grid = document.getElementById('grid');
+  const endIdx = todayIndex(data);
+  const zoneSpecies = SPECIES.filter(sp => sp.zones.includes(currentProvince.id));
+  const scored = zoneSpecies.map(sp => ({ sp, r: scoreSpecies(sp, data, endIdx) }));
+  scored.sort((a,b)=> b.r.score - a.r.score);
+  grid.innerHTML = scored.map(({sp, r})=>{
+    const dormant = r.band === 'fuera';
+    const statsLine = dormant
+      ? ''
+      : `<div class="stats">
+          <span>Lluvia ${sp.lookbackDays}d: <b>${r.accumRain.toFixed(0)} mm</b> (necesita ~${sp.rainThreshold})</span>
+          <span>Temp. media: <b>${r.avgTemp!=null ? r.avgTemp.toFixed(1)+'°C' : '—'}</b></span>
+          <span>Última lluvia fuerte: <b>${r.daysSince!=null ? 'hace '+r.daysSince+' d' : 'sin datos'}</b></span>
+        </div>`;
+    return `
+      <div class="card ${dormant?'dormant':''}">
+        <div class="gauge">${mushroomGauge(r.score, r.band)}</div>
+        <div class="card-body">
+          <div class="card-top">
+            <div>
+              <p class="card-title">${sp.name}</p>
+              <p class="card-latin">${sp.latin} · ${sp.local}</p>
+            </div>
+            <span class="pill ${r.band}">${r.label}</span>
+          </div>
+          <p class="habitat">${sp.habitat}</p>
+          ${statsLine}
+          <p class="verdict">${r.verdict}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadAndRender(){
+  const status = document.getElementById('statusText');
+  const grid = document.getElementById('grid');
+  status.textContent = `Consultando clima de ${currentSpot.name}…`;
+  grid.innerHTML = `<div class="loading">Consultando el tiempo en ${currentSpot.name}…</div>`;
+  try{
+    const data = await fetchWeather(currentSpot);
+    renderCards(data);
+    const now = new Date();
+    status.textContent = `${currentProvince.name} · ${currentSpot.name} · actualizado a las ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`;
+  } catch(err){
+    grid.innerHTML = `<div class="error">No se ha podido cargar el clima (${err.message}). Comprueba la conexión y pulsa «Actualizar».</div>`;
+    status.textContent = 'Error al cargar el clima';
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadAndRender);
+renderProvinces();
+renderSpots();
+loadAndRender();
+
+// ---------------- PWA: registro del service worker + botón de instalar ----------------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {
+      // Si falla (p.ej. abierto como archivo local sin servidor), la app sigue funcionando igual.
+    });
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.hidden = false;
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('installBtn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    btn.hidden = true;
+  });
+});
+</script>
+</body>
+</html>
