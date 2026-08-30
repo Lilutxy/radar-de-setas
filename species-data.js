@@ -145,8 +145,18 @@ async function fetchWeather(spot){
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}` +
     `&daily=precipitation_sum,temperature_2m_mean,temperature_2m_min,windspeed_10m_max` +
     `&past_days=21&forecast_days=1&timezone=Europe%2FMadrid`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('No se pudo obtener el clima');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  let res;
+  try {
+    res = await fetch(url, { signal: controller.signal });
+  } catch(err){
+    if(err.name === 'AbortError') throw new Error('la consulta del clima ha tardado demasiado (más de 15s) — comprueba tu conexión');
+    throw new Error('no se pudo conectar con el servicio de clima (' + err.message + ')');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  if(!res.ok) throw new Error('No se pudo obtener el clima (código ' + res.status + ')');
   const json = await res.json();
   const d = json.daily;
   return {

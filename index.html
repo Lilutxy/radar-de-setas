@@ -303,6 +303,7 @@
 </style>
 </head>
 <body>
+<div id="fatalError" style="display:none; background:#b23; color:#fff; padding:1rem 1.5rem; font-family:monospace; font-size:0.85rem; white-space:pre-wrap;"></div>
 
 <div class="wrap">
   <header>
@@ -344,6 +345,16 @@
   </div>
 </div>
 
+<script>
+// Si algo falla, lo mostramos en pantalla en vez de fallar en silencio.
+function showFatalError(msg){
+  const box = document.getElementById('fatalError');
+  box.style.display = 'block';
+  box.textContent = '⚠️ Error: ' + msg + '\n\nHaz una captura de esto y pásasela a Claude.';
+}
+window.addEventListener('error', (e) => showFatalError(e.message + ' (línea ' + e.lineno + ')'));
+window.addEventListener('unhandledrejection', (e) => showFatalError(String(e.reason)));
+</script>
 <script src="species-data.js"></script>
 <script>
 // ---------------- Datos de provincias y puntos concretos ----------------
