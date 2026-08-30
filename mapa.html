@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mi mapa · Radar de Setas</title>
+<meta name="theme-color" content="#201d17">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #201d17;
+    --bg-soft: #29251d;
+    --paper: #f3ecdd;
+    --paper-2: #e7dec8;
+    --ink: #26211a;
+    --ink-soft: #6b6152;
+    --moss: #71805a;
+    --moss-deep: #4e5a3d;
+    --ocre: #b98a44;
+    --niscalo: #bd5f2b;
+    --mist: #9aa08f;
+    --line: rgba(38,33,26,0.14);
+    --line-dark: rgba(243,236,221,0.12);
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 20% -10%, #2c2820 0%, var(--bg) 55%);
+    color: var(--paper);
+    font-family: 'Work Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 3rem;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+  header{ padding: 2.2rem 0 1.2rem; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ocre); display:flex; align-items:center; gap:0.6rem;
+  }
+  .eyebrow::before{ content:""; width: 6px; height:6px; border-radius:50%; background: var(--niscalo); display:inline-block; }
+  h1{ font-family:'Fraunces', serif; font-weight: 600; font-size: clamp(1.7rem, 4.5vw, 2.3rem); margin: 0.4rem 0 0; }
+  .back-link{
+    font-family:'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--mist);
+    text-decoration:none; border: 1px solid var(--line-dark); padding: 0.5rem 0.9rem; border-radius: 8px;
+  }
+  .back-link:hover{ color: var(--paper); border-color: var(--ocre); }
+
+  /* ---- Login gate ---- */
+  .gate{
+    background: var(--paper); color: var(--ink); border-radius: 14px; padding: 2rem;
+    max-width: 420px; margin: 3rem auto; text-align:center;
+  }
+  .gate p{ color: var(--ink-soft); font-size:0.92rem; line-height:1.5; }
+  .btn{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size: 0.92rem;
+    padding: 0.7rem 1.3rem; border-radius: 9px; border: none; cursor:pointer;
+    background: var(--moss); color:#fff; transition: background 0.15s ease;
+  }
+  .btn:hover{ background: var(--moss-deep); }
+  .btn.secondary{ background: transparent; border: 1px solid var(--ink-soft); color: var(--ink); }
+  .btn.danger{ background: var(--niscalo); }
+
+  /* ---- Profile bar ---- */
+  .profile-bar{
+    display:flex; align-items:center; gap:0.8rem;
+    background: var(--bg-soft); border:1px solid var(--line-dark); border-radius: 12px;
+    padding: 0.7rem 1rem; margin-bottom: 1.2rem;
+  }
+  .profile-bar img{ width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--ocre); }
+  .profile-bar .name{ font-weight:600; }
+  .profile-bar .sub{ font-size:0.78rem; color:var(--mist); }
+  .profile-bar .spacer{ flex:1; }
+  .profile-bar button{
+    font-family:'IBM Plex Mono', monospace; font-size:0.75rem; background:none;
+    border:1px solid var(--line-dark); color:var(--mist); padding:0.4rem 0.7rem; border-radius:6px; cursor:pointer;
+  }
+  .profile-bar button:hover{ color:var(--paper); border-color:var(--ocre); }
+
+  /* ---- Onboarding form ---- */
+  .onboard{ background: var(--paper); color: var(--ink); border-radius: 14px; padding: 1.6rem; max-width: 520px; margin: 0 auto 1.5rem; }
+  .onboard h2{ font-family:'Fraunces', serif; margin:0 0 0.3rem; }
+  .onboard p{ color: var(--ink-soft); font-size:0.88rem; margin:0 0 1rem; }
+  .onboard input[type=text]{
+    width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid var(--line);
+    font-family:'Work Sans', sans-serif; font-size:0.95rem; margin-bottom:1rem;
+  }
+  .avatar-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(56px,1fr)); gap:0.5rem; margin-bottom:1.2rem; }
+  .avatar-grid img{
+    width:56px; height:56px; object-fit:cover; border-radius:50%; cursor:pointer;
+    border: 3px solid transparent; display:block;
+  }
+  .avatar-grid img.selected{ border-color: var(--moss); }
+
+  /* ---- Map ---- */
+  #map{ height: 62vh; min-height: 380px; border-radius: 14px; overflow:hidden; border:1px solid var(--line-dark); }
+  .map-hint{ font-size:0.8rem; color: var(--mist); margin: 0.6rem 0 1rem; }
+  .pin-form{
+    background: var(--paper); color: var(--ink); border-radius: 12px; padding:1rem 1.1rem;
+    max-width: 320px; font-family:'Work Sans', sans-serif;
+  }
+  .pin-form select, .pin-form textarea{
+    width:100%; padding:0.5rem 0.6rem; border-radius:7px; border:1px solid var(--line);
+    font-family:'Work Sans', sans-serif; font-size:0.88rem; margin-bottom:0.6rem;
+  }
+  .pin-form textarea{ resize: vertical; min-height:50px; }
+  .pin-popup{ font-family:'Work Sans', sans-serif; color: var(--ink); min-width:200px; }
+  .pin-popup h3{ font-family:'Fraunces', serif; margin:0 0 0.2rem; font-size:1.02rem; }
+  .pin-popup .latin{ font-style:italic; font-size:0.8rem; color:var(--ink-soft); margin:0 0 0.5rem; }
+  .pin-popup .note{ font-size:0.85rem; margin: 0.4rem 0; }
+  .pin-popup .climate-result{ font-size:0.82rem; margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--line); }
+  .pin-popup .row{ display:flex; gap:0.5rem; margin-top:0.6rem; }
+  .pin-popup button{
+    font-family:'IBM Plex Mono', monospace; font-size:0.72rem; padding:0.35rem 0.6rem;
+    border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer;
+  }
+  .pin-popup button.danger{ color:#b23; border-color:#b23; }
+
+  .loc-status{ font-family:'IBM Plex Mono', monospace; font-size:0.76rem; color:var(--mist); margin:0.6rem 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Cuaderno de campo · Personal</div>
+      <h1>🍄 Mi mapa</h1>
+    </div>
+    <a href="index.html" class="back-link">← Volver al radar</a>
+  </header>
+
+  <div id="gate" class="gate" hidden>
+    <h2 style="font-family:'Fraunces',serif; margin-top:0;">Inicia sesión</h2>
+    <p>Tu mapa es privado: solo tú ves tus chinchetas. Inicia sesión con Google para empezar.</p>
+    <button class="btn" id="loginBtn">Iniciar sesión con Google</button>
+  </div>
+
+  <div id="onboard" class="onboard" hidden>
+    <h2>¿Cómo te llamamos?</h2>
+    <p>Elige un nombre y una seta como avatar. Esto es solo para identificarte en tu propio mapa.</p>
+    <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="30">
+    <div class="avatar-grid" id="avatarGrid"></div>
+    <button class="btn" id="saveProfileBtn">Guardar y continuar</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="profile-bar">
+      <img id="profileAvatar" src="" alt="">
+      <div>
+        <div class="name" id="profileName"></div>
+        <div class="sub">Solo tú ves este mapa</div>
+      </div>
+      <div class="spacer"></div>
+      <button id="editProfileBtn">Editar perfil</button>
+      <button id="logoutBtn">Cerrar sesión</button>
+    </div>
+
+    <div class="loc-status" id="locStatus">Buscando tu ubicación…</div>
+    <div id="map"></div>
+    <p class="map-hint">Toca el mapa donde hayas encontrado una seta para añadir una chincheta. Toca una chincheta para ver detalles, comprobar el clima ahora mismo o borrarla.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="species-data.js"></script>
+<script>
+// ---------------- Firebase ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDkU1oDkY_Ik-lujf0xVmc6HJoTGGmBR-c",
+  authDomain: "radar-de-setas.firebaseapp.com",
+  projectId: "radar-de-setas",
+  storageBucket: "radar-de-setas.firebasestorage.app",
+  messagingSenderId: "722414169629",
+  appId: "1:722414169629:web:17d8e0af81e5a2da5ee0f4"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const provider = new firebase.auth.GoogleAuthProvider();
+
+let currentUser = null;
+let currentProfile = null;
+let map = null;
+let meMarker = null;
+let pinsById = {};       // id -> {marker, data}
+let unsubscribePins = null;
+let selectedAvatarImg = null;
+
+// ---------------- Elementos ----------------
+const gateEl = document.getElementById('gate');
+const onboardEl = document.getElementById('onboard');
+const appEl = document.getElementById('app');
+const avatarGrid = document.getElementById('avatarGrid');
+const nameInput = document.getElementById('nameInput');
+
+// Rellenar el selector de avatar con las fotos reales de las especies
+SPECIES.forEach(sp => {
+  const img = document.createElement('img');
+  img.src = speciesImageUrl(sp.img);
+  img.alt = sp.name;
+  img.title = sp.name;
+  img.dataset.speciesId = sp.id;
+  img.addEventListener('click', () => {
+    avatarGrid.querySelectorAll('img').forEach(i => i.classList.remove('selected'));
+    img.classList.add('selected');
+    selectedAvatarImg = sp.id;
+  });
+  avatarGrid.appendChild(img);
+});
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  auth.signInWithPopup(provider).catch(err => {
+    alert('No se pudo iniciar sesión: ' + err.message);
+  });
+});
+document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+document.getElementById('editProfileBtn').addEventListener('click', () => {
+  appEl.hidden = true;
+  showOnboarding(currentProfile);
+});
+document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+
+function showOnboarding(existing){
+  onboardEl.hidden = false;
+  nameInput.value = existing ? existing.name : '';
+  selectedAvatarImg = existing ? existing.avatarSpeciesId : null;
+  avatarGrid.querySelectorAll('img').forEach(i => {
+    i.classList.toggle('selected', i.dataset.speciesId === selectedAvatarImg);
+  });
+}
+
+async function saveProfile(){
+  const name = nameInput.value.trim();
+  if(!name){ alert('Ponle un nombre a tu perfil.'); return; }
+  if(!selectedAvatarImg){ alert('Elige una seta como avatar.'); return; }
+  const profile = { name, avatarSpeciesId: selectedAvatarImg, uid: currentUser.uid, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+  await db.collection('users').doc(currentUser.uid).set(profile, { merge: true });
+  currentProfile = profile;
+  onboardEl.hidden = true;
+  renderProfileBar();
+  appEl.hidden = false;
+  initMapIfNeeded();
+}
+
+function renderProfileBar(){
+  const sp = SPECIES.find(s => s.id === currentProfile.avatarSpeciesId);
+  document.getElementById('profileAvatar').src = sp ? speciesImageUrl(sp.img) : '';
+  document.getElementById('profileName').textContent = currentProfile.name;
+}
+
+// ---------------- Auth state ----------------
+auth.onAuthStateChanged(async (user) => {
+  gateEl.hidden = true; onboardEl.hidden = true; appEl.hidden = true;
+  if(!user){
+    currentUser = null; currentProfile = null;
+    if(unsubscribePins) { unsubscribePins(); unsubscribePins = null; }
+    gateEl.hidden = false;
+    return;
+  }
+  currentUser = user;
+  const doc = await db.collection('users').doc(user.uid).get();
+  if(!doc.exists){
+    showOnboarding(null);
+  } else {
+    currentProfile = doc.data();
+    renderProfileBar();
+    appEl.hidden = false;
+    initMapIfNeeded();
+  }
+});
+
+// ---------------- Mapa ----------------
+function initMapIfNeeded(){
+  if(map) { map.invalidateSize(); listenPins(); watchLocation(); return; }
+
+  map = L.map('map').setView([42.9, -3.0], 8); // centro aprox. Euskadi/Burgos/Soria/Palencia
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  map.on('click', (e) => openPinForm(e.latlng));
+
+  listenPins();
+  watchLocation();
+}
+
+function watchLocation(){
+  const status = document.getElementById('locStatus');
+  if(!('geolocation' in navigator)){
+    status.textContent = 'Tu navegador no permite compartir ubicación.';
+    return;
+  }
+  navigator.geolocation.watchPosition((pos) => {
+    const { latitude, longitude, accuracy } = pos.coords;
+    status.textContent = `Ubicación actualizada · precisión ~${Math.round(accuracy)} m`;
+    if(!meMarker){
+      meMarker = L.circleMarker([latitude, longitude], {
+        radius: 8, color: '#2b6cff', fillColor: '#2b6cff', fillOpacity: 0.6, weight: 2,
+      }).addTo(map).bindTooltip('Tú estás aquí');
+      map.setView([latitude, longitude], 11);
+    } else {
+      meMarker.setLatLng([latitude, longitude]);
+    }
+  }, (err) => {
+    status.textContent = 'No se pudo obtener tu ubicación (' + err.message + '). Puedes seguir usando el mapa igualmente.';
+  }, { enableHighAccuracy: true, maximumAge: 15000 });
+}
+
+// ---------------- Formulario para nueva chincheta ----------------
+function openPinForm(latlng){
+  const container = document.createElement('div');
+  container.className = 'pin-form';
+  const options = SPECIES.map(sp => `<option value="${sp.id}">${sp.name}</option>`).join('');
+  container.innerHTML = `
+    <div style="font-weight:600; margin-bottom:0.5rem;">Nueva chincheta</div>
+    <select id="pinSpecies">${options}</select>
+    <textarea id="pinNote" placeholder="Nota (opcional): cantidad, bajo qué árbol..."></textarea>
+    <button class="btn" id="pinSaveBtn" style="width:100%;">Guardar chincheta</button>
+  `;
+  const popup = L.popup({ maxWidth: 280 }).setLatLng(latlng).setContent(container).openOn(map);
+
+  container.querySelector('#pinSaveBtn').addEventListener('click', async () => {
+    const speciesId = container.querySelector('#pinSpecies').value;
+    const note = container.querySelector('#pinNote').value.trim();
+    await db.collection('pins').add({
+      ownerUid: currentUser.uid,
+      speciesId, note,
+      lat: latlng.lat, lon: latlng.lng,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    map.closePopup(popup);
+  });
+}
+
+// ---------------- Escuchar chinchetas propias en tiempo real ----------------
+function listenPins(){
+  if(unsubscribePins) unsubscribePins();
+  unsubscribePins = db.collection('pins').where('ownerUid', '==', currentUser.uid)
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+        if(change.type === 'removed'){
+          if(pinsById[id]){ map.removeLayer(pinsById[id].marker); delete pinsById[id]; }
+          return;
+        }
+        if(pinsById[id]){ map.removeLayer(pinsById[id].marker); }
+        const marker = L.marker([data.lat, data.lon]).addTo(map);
+        marker.on('click', () => openPinPopup(id, data, marker));
+        pinsById[id] = { marker, data };
+      });
+    }, err => {
+      console.error(err);
+    });
+}
+
+function openPinPopup(id, data, marker){
+  const sp = SPECIES.find(s => s.id === data.speciesId);
+  const container = document.createElement('div');
+  container.className = 'pin-popup';
+  const dateStr = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleDateString('es-ES') : '';
+  container.innerHTML = `
+    <h3>${sp ? sp.name : data.speciesId}</h3>
+    <div class="latin">${sp ? sp.latin : ''} ${dateStr ? '· ' + dateStr : ''}</div>
+    ${data.note ? `<div class="note">${data.note}</div>` : ''}
+    <div class="row">
+      <button id="checkClimateBtn">Comprobar clima ahora</button>
+      <button class="danger" id="deletePinBtn">Borrar</button>
+    </div>
+    <div class="climate-result" id="climateResult" hidden></div>
+  `;
+  marker.bindPopup(container, { maxWidth: 280 }).openPopup();
+
+  container.querySelector('#deletePinBtn').addEventListener('click', async () => {
+    await db.collection('pins').doc(id).delete();
+    marker.closePopup();
+  });
+
+  container.querySelector('#checkClimateBtn').addEventListener('click', async (e) => {
+    const resultEl = container.querySelector('#climateResult');
+    e.target.disabled = true;
+    e.target.textContent = 'Consultando…';
+    try {
+      const weather = await fetchWeather({ lat: data.lat, lon: data.lon });
+      const idx = todayIndex(weather);
+      const r = scoreSpecies(sp, weather, idx);
+      resultEl.hidden = false;
+      resultEl.innerHTML = `<b>${r.label}</b> (${r.score}/100)<br>${r.verdict}`;
+    } catch(err){
+      resultEl.hidden = false;
+      resultEl.textContent = 'No se pudo consultar el clima: ' + err.message;
+    } finally {
+      e.target.disabled = false;
+      e.target.textContent = 'Comprobar clima ahora';
+    }
+  });
+}
+</script>
+</body>
+</html>
