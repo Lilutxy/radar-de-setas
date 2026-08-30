@@ -216,9 +216,18 @@ SPECIES.forEach(sp => {
 });
 
 document.getElementById('loginBtn').addEventListener('click', () => {
-  auth.signInWithPopup(provider).catch(err => {
-    alert('No se pudo iniciar sesión: ' + err.message);
-  });
+  auth.signInWithRedirect(provider);
+});
+
+// Si venimos de vuelta de un login por redirección, comprobamos si hubo error
+auth.getRedirectResult().catch(err => {
+  console.error('Error de login:', err);
+  const gateEl2 = document.getElementById('gate');
+  const msg = document.createElement('p');
+  msg.style.color = '#b23';
+  msg.style.fontSize = '0.85rem';
+  msg.textContent = 'No se pudo iniciar sesión: ' + err.message + ' (código: ' + err.code + ')';
+  gateEl2.appendChild(msg);
 });
 document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
 document.getElementById('editProfileBtn').addEventListener('click', () => {

@@ -1,6 +1,8 @@
-const CACHE_NAME = 'radar-de-setas-v1';
+const CACHE_NAME = 'radar-de-setas-v2';
 const APP_SHELL = [
   './index.html',
+  './mapa.html',
+  './species-data.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -30,10 +32,17 @@ self.addEventListener('fetch', (event) => {
     return; // deja pasar la petición tal cual, sin interceptar
   }
 
-  // Para los ficheros propios de la app: caché primero, red como respaldo.
+  // Archivos propios de la app: red primero (para ver siempre lo último subido),
+  // y si no hay conexión, caemos a la última copia guardada.
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
   }
 });

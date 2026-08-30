@@ -415,7 +415,9 @@ function renderSpots(){
 function renderCards(data){
   const grid = document.getElementById('grid');
   const endIdx = todayIndex(data);
-  const zoneSpecies = SPECIES.filter(sp => sp.zones.includes(currentProvince.id));
+  const zoneSpecies = SPECIES.filter(sp =>
+    sp.zones.includes(currentProvince.id) || (sp.extraSpots && sp.extraSpots.includes(currentSpot.id))
+  );
   const scored = zoneSpecies.map(sp => ({ sp, r: scoreSpecies(sp, data, endIdx) }));
   scored.sort((a,b)=> b.r.score - a.r.score);
   grid.innerHTML = scored.map(({sp, r})=>{

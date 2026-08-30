@@ -59,6 +59,7 @@ const SPECIES = [
     seasonMonths:[7,10], tempMin:15, tempMax:32, rainThreshold:25, lookbackDays:12,
     lagMin:5, lagMax:12, windSensitive:false, frostSensitive:false,
     zones: ['araba','burgos','soria','cantabria','palencia'],
+    extraSpots: ['urdaibai'], // encinar cantábrico de Urdaibai: microclima más cálido que el resto de Bizkaia
   },
   {
     id:'senderuela', name:'Senderuela', latin:'Marasmius oreades', local:'seta de carrerilla',
@@ -70,7 +71,7 @@ const SPECIES = [
   {
     id:'colmenilla', name:'Colmenilla', latin:'Morchella spp.', local:'morilla',
     habitat:'Riberas y bosques de caducifolias alteradas (chopos, fresnos, avellanos), suelo removido.',
-    img:'Morchella_esculenta_2.jpg',
+    img:'Morchella-esculenta-1183.jpg',
     seasonMonths:[3,5], tempMin:7, tempMax:18, rainThreshold:20, lookbackDays:12,
     lagMin:6, lagMax:14, windSensitive:false, frostSensitive:true, zones: ALL_ZONES,
   },
@@ -120,7 +121,7 @@ const SPECIES = [
 ];
 
 function speciesImageUrl(filename){
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${filename}?width=240`;
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=240`;
 }
 const BAND_COLORS = { alta:'#71805a', media:'#b98a44', baja:'#9aa08f', fuera:'#9aa08f' };
 function onSpeciesImgError(imgEl, band){
