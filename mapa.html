@@ -135,9 +135,9 @@
   </header>
 
   <div id="gate" class="gate" hidden>
-    <h2 style="font-family:'Fraunces',serif; margin-top:0;">Inicia sesión</h2>
-    <p>Tu mapa es privado: solo tú ves tus chinchetas. Inicia sesión con Google para empezar.</p>
-    <button class="btn" id="loginBtn">Iniciar sesión con Google</button>
+    <h2 style="font-family:'Fraunces',serif; margin-top:0;">Empieza tu mapa</h2>
+    <p>Tu mapa es privado: solo tú ves tus chinchetas, guardadas en este dispositivo/navegador. Pulsa para crear tu identidad (nombre + seta como avatar).</p>
+    <button class="btn" id="loginBtn">Empezar</button>
   </div>
 
   <div id="onboard" class="onboard" hidden>
@@ -198,7 +198,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const provider = new firebase.auth.GoogleAuthProvider();
 
 let currentUser = null;
 let currentProfile = null;
@@ -235,20 +234,20 @@ SPECIES.forEach(sp => {
 });
 
 document.getElementById('loginBtn').addEventListener('click', () => {
-  auth.signInWithRedirect(provider);
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creando...';
+  auth.signInAnonymously().catch(err => {
+    console.error('Error de login:', err);
+    showFatalError('No se pudo crear tu identidad: ' + err.message + ' (código: ' + err.code + ')');
+    btn.disabled = false;
+    btn.textContent = 'Empezar';
+  });
 });
-
-// Si venimos de vuelta de un login por redirección, comprobamos si hubo error
-auth.getRedirectResult().catch(err => {
-  console.error('Error de login:', err);
-  const gateEl2 = document.getElementById('gate');
-  const msg = document.createElement('p');
-  msg.style.color = '#b23';
-  msg.style.fontSize = '0.85rem';
-  msg.textContent = 'No se pudo iniciar sesión: ' + err.message + ' (código: ' + err.code + ')';
-  gateEl2.appendChild(msg);
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  const ok = confirm('Como tu identidad no está ligada a una cuenta de Google, si cierras sesión no podrás volver a acceder a este mismo mapa desde este botón (se crearía uno nuevo vacío la próxima vez). ¿Seguro que quieres cerrar sesión?');
+  if(ok) auth.signOut();
 });
-document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
 document.getElementById('editProfileBtn').addEventListener('click', () => {
   appEl.hidden = true;
   showOnboarding(currentProfile);
