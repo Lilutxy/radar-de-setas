@@ -193,6 +193,19 @@ function daysSinceBigRain(data, endIdx, threshold, lookback){
   return null;
 }
 
+// ---------------- Alertas: "faltan X días para la ventana óptima" ----------------
+// No intenta predecir lluvia futura (poco fiable a varios días vista): usa la lluvia
+// que YA ha caído. Si la última lluvia fuerte fue hace X días y la especie tarda
+// lagMin-lagMax días en salir, sabemos matemáticamente cuándo empieza su ventana.
+function daysUntilWindow(sp, data, endIdx){
+  const month = new Date().getMonth()+1;
+  if(!inSeason(sp.seasonMonths, month)) return null;
+  const daysSince = daysSinceBigRain(data, endIdx, 5, 21);
+  if(daysSince == null) return null;
+  const daysUntil = sp.lagMin - daysSince;
+  return daysUntil; // positivo = aún faltan días; 0 o negativo = ya está en ventana o pasada
+}
+
 // ---------------- Puntuación por especie ----------------
 function scoreSpecies(sp, data, endIdx){
   const month = new Date().getMonth()+1;
@@ -254,4 +267,24 @@ function scoreSpecies(sp, data, endIdx){
   else { band='baja'; label='Baja / fuera de ventana'; }
 
   return { score: total, band, label, verdict: lagMsg, accumRain, avgTemp, daysSince };
+}
+
+// ---------------- Notificaciones locales ----------------
+function alertsEnabled(){
+  return localStorage.getItem('radarSetasAlertsOn') === '1';
+}
+function setAlertsEnabled(on){
+  localStorage.setItem('radarSetasAlertsOn', on ? '1' : '0');
+}
+function alreadyNotifiedToday(key){
+  const today = isoDate(new Date());
+  return localStorage.getItem('radarSetasAlert:' + key) === today;
+}
+function markNotifiedToday(key){
+  localStorage.setItem('radarSetasAlert:' + key, isoDate(new Date()));
+}
+function fireNotification(title, body){
+  if('Notification' in window && Notification.permission === 'granted'){
+    try { new Notification(title, { body, icon: 'icon-192.png' }); } catch(e){ /* algunos navegadores sin permiso del SO fallan aquí, lo ignoramos */ }
+  }
 }

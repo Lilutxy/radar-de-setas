@@ -80,6 +80,15 @@
     border:1px solid var(--line-dark); color:var(--mist); padding:0.4rem 0.7rem; border-radius:6px; cursor:pointer;
   }
   .profile-bar button:hover{ color:var(--paper); border-color:var(--ocre); }
+  .profile-bar button.active{ border-color: var(--moss); color: var(--moss); }
+
+  .alerts-box{ display:flex; flex-direction:column; gap:0.5rem; margin: 0 0 1rem; }
+  .alert-card{
+    background: var(--bg-soft); border:1px solid var(--ocre); border-radius: 10px;
+    padding: 0.7rem 1rem; font-size: 0.85rem; color: var(--paper);
+    display:flex; align-items:center; gap:0.6rem;
+  }
+  .alert-card b{ color: var(--ocre); }
 
   /* ---- Onboarding form ---- */
   .onboard{ background: var(--paper); color: var(--ink); border-radius: 14px; padding: 1.6rem; max-width: 520px; margin: 0 auto 1.5rem; }
@@ -156,9 +165,12 @@
         <div class="sub">Solo tú ves este mapa</div>
       </div>
       <div class="spacer"></div>
+      <button id="alertsBtnMap">🔔 Activar avisos</button>
       <button id="editProfileBtn">Editar perfil</button>
       <button id="logoutBtn">Cerrar sesión</button>
     </div>
+
+    <div id="alertsBoxMap" class="alerts-box"></div>
 
     <div class="loc-status" id="locStatus">Buscando tu ubicación…</div>
     <div id="map"></div>
@@ -368,6 +380,7 @@ function openPinForm(latlng){
 }
 
 // ---------------- Escuchar chinchetas propias en tiempo real ----------------
+let alertsCheckTimer = null;
 function listenPins(){
   if(unsubscribePins) unsubscribePins();
   unsubscribePins = db.collection('pins').where('ownerUid', '==', currentUser.uid)
@@ -384,10 +397,74 @@ function listenPins(){
         marker.on('click', () => openPinPopup(id, data, marker));
         pinsById[id] = { marker, data };
       });
+      // Pequeño margen: si llegan varias chinchetas seguidas, esperamos a que se asienten
+      // antes de comprobar avisos, para no lanzar la comprobación de golpe muchas veces.
+      clearTimeout(alertsCheckTimer);
+      alertsCheckTimer = setTimeout(checkPinAlerts, 800);
     }, err => {
       console.error(err);
     });
 }
+
+// ---------------- Avisos: "faltan 7 / 2 días" por cada chincheta ----------------
+async function checkPinAlerts(){
+  const box = document.getElementById('alertsBoxMap');
+  box.innerHTML = '';
+  if(!alertsEnabled()) return;
+  for(const id in pinsById){
+    const { data } = pinsById[id];
+    const sp = SPECIES.find(s => s.id === data.speciesId);
+    if(!sp) continue;
+    try{
+      const weather = await fetchWeather({ lat: data.lat, lon: data.lon });
+      const idx = todayIndex(weather);
+      const daysUntil = daysUntilWindow(sp, weather, idx);
+      if(daysUntil !== 7 && daysUntil !== 2) continue;
+      const key = 'pin:' + id + ':' + daysUntil;
+      const title = daysUntil === 7 ? 'Dentro de una semana' : 'Dentro de 2 días';
+      const msg = `${sp.name} podría empezar a salir en tu chincheta en ${daysUntil} días, según la última lluvia fuerte registrada ahí.`;
+      const card = document.createElement('div');
+      card.className = 'alert-card';
+      card.innerHTML = `🔔 <span><b>${title}:</b> ${msg}</span>`;
+      box.appendChild(card);
+      if(!alreadyNotifiedToday(key)){
+        fireNotification('🍄 ' + title, msg);
+        markNotifiedToday(key);
+      }
+    } catch(e){ /* si falla el clima de una chincheta, seguimos con las demás */ }
+  }
+}
+
+function updateAlertsBtnMap(){
+  const btn = document.getElementById('alertsBtnMap');
+  if(alertsEnabled()){
+    btn.textContent = '🔔 Avisos activados';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '🔔 Activar avisos';
+    btn.classList.remove('active');
+  }
+}
+document.getElementById('alertsBtnMap').addEventListener('click', () => {
+  if(alertsEnabled()){
+    setAlertsEnabled(false);
+    updateAlertsBtnMap();
+    document.getElementById('alertsBoxMap').innerHTML = '';
+    return;
+  }
+  if('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied'){
+    Notification.requestPermission().then(() => {
+      setAlertsEnabled(true);
+      updateAlertsBtnMap();
+      checkPinAlerts();
+    });
+  } else {
+    setAlertsEnabled(true);
+    updateAlertsBtnMap();
+    checkPinAlerts();
+  }
+});
+updateAlertsBtnMap();
 
 function openPinPopup(id, data, marker){
   const sp = SPECIES.find(s => s.id === data.speciesId);
