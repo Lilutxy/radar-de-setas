@@ -124,6 +124,7 @@
 </style>
 </head>
 <body>
+<div id="fatalError" style="display:none; background:#b23; color:#fff; padding:1rem 1.5rem; font-family:monospace; font-size:0.85rem; white-space:pre-wrap;"></div>
 <div class="wrap">
   <header>
     <div>
@@ -165,6 +166,16 @@
   </div>
 </div>
 
+<script>
+// Si algo falla, lo mostramos en pantalla en vez de fallar en silencio.
+function showFatalError(msg){
+  const box = document.getElementById('fatalError');
+  box.style.display = 'block';
+  box.textContent = '⚠️ Error: ' + msg + '\n\nHaz una captura de esto y pásasela a Claude.';
+}
+window.addEventListener('error', (e) => showFatalError(e.message + ' (línea ' + e.lineno + ')'));
+window.addEventListener('unhandledrejection', (e) => showFatalError(String(e.reason)));
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -172,6 +183,10 @@
 <script src="species-data.js"></script>
 <script>
 // ---------------- Firebase ----------------
+if (typeof firebase === 'undefined') {
+  showFatalError('Las librerías de Firebase no han cargado. Prueba a desactivar temporalmente cualquier bloqueador de anuncios/rastreadores para esta página, o revisa tu conexión.');
+  throw new Error('firebase no definido');
+}
 const firebaseConfig = {
   apiKey: "AIzaSyDkU1oDkY_Ik-lujf0xVmc6HJoTGGmBR-c",
   authDomain: "radar-de-setas.firebaseapp.com",
@@ -201,6 +216,10 @@ const avatarGrid = document.getElementById('avatarGrid');
 const nameInput = document.getElementById('nameInput');
 
 // Rellenar el selector de avatar con las fotos reales de las especies
+if (typeof SPECIES === 'undefined') {
+  showFatalError('No se ha podido cargar species-data.js (revisa que el archivo esté subido en la misma carpeta que mapa.html).');
+  throw new Error('SPECIES no definido');
+}
 SPECIES.forEach(sp => {
   const img = document.createElement('img');
   img.src = speciesImageUrl(sp.img);
